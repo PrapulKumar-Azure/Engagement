@@ -11,14 +11,16 @@ $(function () {
         venue: 'Vedika Banquet Hall',
         address: 'Boduppal, Near Mangalya Shopping Mall',
         mapsUrl: 'https://maps.app.goo.gl/ohNhv6QscpYCt11t6?g_st=aw',
-        hosts: ['Smt. Dongari Vijayasri', 'Sri Dongari Narendender'],
+        blessings: ['|| శ్రీ రస్తు ||', '|| శుభమస్తు ||'],
+        hosts: ['Smt. Sri Dongari Vijayasri', 'Narender'],
         contacts: ['9885114423', '9000557312'],
         inviteText:
             'With the graceful blessings of our families and elders, we joyfully invite you to share in our happiness as we take the first step towards a lifetime of love, laughter, and togetherness. Your presence and good wishes will make our special day truly memorable.'
     };
 
     initPetals();
-    initReveal();
+    initBootSequence();
+    initHeroParallax();
     initCountdown(FALLBACK.dateIso);
 
     $.ajax({
@@ -47,6 +49,15 @@ $(function () {
         $('[data-bind="venue"]').text(data.venue);
         $('[data-bind="address"]').text(data.address);
         $('[data-bind="inviteText"]').text(data.inviteText);
+
+        if (Array.isArray(data.blessings) && data.blessings.length) {
+            if (data.blessings[0]) {
+                $('[data-bind="blessingLeft"]').text(data.blessings[0]);
+            }
+            if (data.blessings[1]) {
+                $('[data-bind="blessingRight"]').text(data.blessings[1]);
+            }
+        }
 
         if (Array.isArray(data.hosts) && data.hosts.length) {
             var hostsHtml = data.hosts
@@ -163,6 +174,30 @@ $(function () {
         return n < 10 ? '0' + n : String(n);
     }
 
+    function initBootSequence() {
+        var $body = $('body');
+        var $header = $('.blessing-header');
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function unlockPage() {
+            $body.removeClass('is-booting');
+            initReveal();
+        }
+
+        if (reduceMotion) {
+            $header.addClass('is-in');
+            unlockPage();
+            return;
+        }
+
+        // Header blessings first, then hero / rest of the page
+        window.requestAnimationFrame(function () {
+            $header.addClass('is-in');
+        });
+
+        window.setTimeout(unlockPage, 1200);
+    }
+
     function initReveal() {
         function check() {
             var bottom = $(window).scrollTop() + $(window).height();
@@ -178,6 +213,40 @@ $(function () {
         $(window).on('scroll resize', check);
         check();
         setTimeout(check, 120);
+    }
+
+    function initHeroParallax() {
+        var $hero = $('.hero');
+        var $bg = $('.hero-bg');
+        if (!$hero.length || !$bg.length) return;
+
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        var ticking = false;
+        var factor = 0.38;
+
+        function update() {
+            ticking = false;
+            var rect = $hero[0].getBoundingClientRect();
+            var viewH = window.innerHeight || 1;
+            // Skip work once hero has fully left the viewport
+            if (rect.bottom < 0 || rect.top > viewH) return;
+
+            var offset = -rect.top * factor;
+            $bg.css('transform', 'translate3d(0, ' + offset.toFixed(2) + 'px, 0)');
+        }
+
+        function onScroll() {
+            if (!ticking) {
+                ticking = true;
+                window.requestAnimationFrame(update);
+            }
+        }
+
+        $(window).on('scroll resize', onScroll);
+        update();
     }
 
     function initPetals() {
