@@ -6,8 +6,8 @@ $(function () {
         groom: 'Dongari Prapul Kumar',
         bride: 'Pokala Sreeja',
         dateLabel: '14th August 2026',
-        dateIso: '2026-08-14T10:30:00',
-        timeLabel: '10:30 AM',
+        dateIso: '2026-08-14T11:00:00',
+        timeLabel: '11:00 AM',
         venue: 'Vedika Banquet Hall',
         address: 'Boduppal, Near Mangalya Shopping Mall',
         mapsUrl: 'https://maps.app.goo.gl/ohNhv6QscpYCt11t6?g_st=aw',
@@ -91,6 +91,81 @@ $(function () {
 
         var calUrl = buildGoogleCalendarUrl(data);
         $('[data-bind="calendar"]').attr('href', calUrl);
+
+        prepareCharReveal();
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function wrapChars($el) {
+        if (!$el.length) return;
+
+        var text = $el.text();
+        if (!text) return;
+
+        $el.attr('aria-label', text);
+
+        var html = '';
+        for (var i = 0; i < text.length; i += 1) {
+            var ch = text.charAt(i);
+            if (ch === ' ') {
+                html += '<span class="char char-space" aria-hidden="true">&nbsp;</span>';
+            } else {
+                html += '<span class="char" aria-hidden="true">' + escapeHtml(ch) + '</span>';
+            }
+        }
+        $el.html(html);
+    }
+
+    function prepareCharReveal() {
+        var $kicker = $('.hero-kicker.char-reveal');
+        if ($kicker.length && !$kicker.find('.char').length) {
+            wrapChars($kicker);
+        }
+
+        wrapChars($('[data-bind="groom"]'));
+        wrapChars($('[data-bind="bride"]'));
+
+        var $amp = $('.hero-names .amp');
+        if ($amp.length) {
+            var ampText = $amp.text() || '&';
+            $amp.attr('aria-label', ampText);
+            $amp.html('<span class="char" aria-hidden="true">' + escapeHtml(ampText) + '</span>');
+        }
+
+        var nameIndex = 0;
+        $('.hero-names .char').each(function () {
+            this.style.setProperty('--char-i', String(nameIndex));
+            nameIndex += 1;
+        });
+
+        wrapChars($('[data-bind="dateHero"]'));
+        var dateIndex = 0;
+        $('[data-bind="dateHero"] .char').each(function () {
+            this.style.setProperty('--char-i', String(dateIndex));
+            dateIndex += 1;
+        });
+
+        var kickerIndex = 0;
+        $kicker.find('.char').each(function () {
+            this.style.setProperty('--char-i', String(kickerIndex));
+            kickerIndex += 1;
+        });
+
+        // If already revealed (late data load), replay letter animation
+        $('.char-reveal.visible').each(function () {
+            var el = this;
+            el.classList.remove('visible');
+            // force reflow so animation restarts
+            void el.offsetWidth;
+            el.classList.add('visible');
+        });
     }
 
     function formatHeroDate(label) {
@@ -103,11 +178,11 @@ $(function () {
     }
 
     function buildGoogleCalendarUrl(data) {
-        // Local wall-clock format (YYYYMMDDTHHMMSS) + ctz keeps Muhurtham at 10:30 IST
-        var startLocal = (data.dateIso || '2026-08-14T10:30:00').replace(/[-:]/g, '').slice(0, 15);
-        var endDate = new Date((data.dateIso || '2026-08-14T10:30:00').replace('T', ' '));
+        // Local wall-clock format (YYYYMMDDTHHMMSS) + ctz keeps Muhurtham at 11:00 IST
+        var startLocal = (data.dateIso || '2026-08-14T11:00:00').replace(/[-:]/g, '').slice(0, 15);
+        var endDate = new Date((data.dateIso || '2026-08-14T11:00:00').replace('T', ' '));
         if (isNaN(endDate.getTime())) {
-            endDate = new Date(2026, 7, 14, 10, 30, 0);
+            endDate = new Date(2026, 7, 14, 11, 0, 0);
         }
         endDate = new Date(endDate.getTime() + 3 * 60 * 60 * 1000);
         var endLocal =
@@ -141,7 +216,7 @@ $(function () {
 
         var target = new Date(dateIso).getTime();
         if (isNaN(target)) {
-            target = new Date('2026-08-14T10:30:00').getTime();
+            target = new Date('2026-08-14T11:00:00').getTime();
         }
 
         function tick() {
@@ -180,6 +255,7 @@ $(function () {
         var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         function unlockPage() {
+            prepareCharReveal();
             $body.removeClass('is-booting');
             initReveal();
         }
